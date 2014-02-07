@@ -1,12 +1,12 @@
 // mad is MPEG Audio Decoder.
 package mad
 
+// #cgo pkg-config: mad
 // #include <stdlib.h>
 // #include "gomad.h"
 import "C"
 
 import (
-	"os"
 	"unsafe"
 	"fmt"
 )
@@ -28,7 +28,7 @@ const (
 )
 
 // New opens and initialize MAD decoder and File structure.
-func New(filename string) (decoder *Decoder, err os.Error) {
+func New(filename string) (decoder *Decoder, err error) {
 	cFilename := C.CString(filename)
 	defer C.free(unsafe.Pointer(cFilename))
 
@@ -66,7 +66,7 @@ func (decoder *Decoder) CurrentPosition() int {
 // integer value, which is new decoding position relative to the start of the file.
 // If whence equals SeekCurrent than position parameter can be negative as well as positive integer,
 // which means new position related to the current one.
-func (decoder *Decoder) Seek(position int, whence Whence) os.Error {
+func (decoder *Decoder) Seek(position int, whence Whence) error {
 	// TODO:
 
 	return nil
@@ -75,10 +75,11 @@ func (decoder *Decoder) Seek(position int, whence Whence) os.Error {
 // Read returns up to the specified number of bytes of decoded PCM audio.
 // Return number of read 16-bit words.
 func (decoder *Decoder) Read(buf []byte) int {
-	bp := (*_Ctype_char)(unsafe.Pointer(&buf[0]))
-	l := (_Ctypedef_size_t)(len(buf))
+	bp := C.CString(string(buf))
+	l := (C.size_t)(len(buf))
 
 	read := C.gomad_read(&decoder.cDecoder, bp, l)
+	C.free(unsafe.Pointer(bp))
 	
 	return int(read)
 }
